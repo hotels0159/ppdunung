@@ -177,7 +177,7 @@ td,th{border:1px solid #000;padding:6px;}
   </button>
 </div>
 
-<label>Effective Bags</label>
+<label>Total Bags</label>
 <input id="eqty" readonly>
 
 <label>Grand Total Value With GST</label>
@@ -393,6 +393,7 @@ const millNames = [
 "SHARAD SAKHAR KARKHANA SSK","Shri Mahalaxmi Narayani Sugars.",
 "SHREE DATTA SHETAKRI SSSK LTD","MAHALAXMI ENTERPRISES"
 ];
+
 let arr = JSON.parse(localStorage.getItem("mdnameArr") || "[]");
 millNames.forEach(name => {
   if(!arr.includes(name)) arr.push(name);
@@ -456,7 +457,7 @@ function generateDO(){
   document.querySelectorAll('#sugarLinesBody tr').forEach(row => {
     const qty   = row.querySelector('.line-qty').value   || '0';
     const grade = row.querySelector('.line-grade').value || '-';
-    linesHtml += `• ${qty} Quintals of Grade <span class="box">${grade}</span><br>`;
+    linesHtml += `<span class="box">• ${qty} Quintals </span> of Grade <span class="box">${grade}</span><br>`;
   });
 
   document.getElementById('output').innerHTML = `
@@ -497,7 +498,7 @@ ${document.getElementById('mdaddress').value || '---'}</p>
 <p style="margin-left:25px; margin-bottom:12px;">${linesHtml || '<i>No grades entered</i>'}</p>
 
 <p style="font-size:17px; margin:15px 0; font-weight:bold;">
-  Effective Total Bags: <span class="box">${grandEffQty}</span>
+  Total Bags: <span class="box">${grandEffQty}</span>
 </p>
 
 <table style="font-size:15px; margin:12px 0; border:1px solid #666; width:70%;">
@@ -723,7 +724,7 @@ function loadOldDO(doData) {
 
   let linesHtml = '';
   doData.sugarLines.forEach(line => {
-    linesHtml += `• ${line.quintal} Quintals of Grade <span class="box">${line.grade}</span><br>`;
+    linesHtml += `<span class="box">• ${line.quintal} Quintals </span> of Grade <span class="box">${line.grade}</span><br>`;
   });
 
   document.getElementById('output').innerHTML = `
@@ -764,7 +765,7 @@ ${doData.mdAddress || '---'}</p>
 <p style="margin-left:25px; margin-bottom:12px;">${linesHtml || '<i>No grades entered</i>'}</p>
 
 <p style="font-size:17px; margin:15px 0; font-weight:bold;">
-  Effective Total Bags: <span class="box">${doData.effectiveTotalBags || '0'}</span>
+   Total Bags: <span class="box">${doData.effectiveTotalBags || '0'}</span>
 </p>
 
 <table style="font-size:15px; margin:12px 0; border:1px solid #666; width:70%;">
@@ -1007,7 +1008,7 @@ function generateOldVoucher(doNumber) {
     <td style="padding:10px; border:1px solid #ccc;">${doData.mdName}</td>
   </tr>
   <tr>
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Effective Bags</td>
+    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Total Bags</td>
     <td style="padding:10px; border:1px solid #ccc;">${doData.effectiveTotalBags || '0'}</td>
   </tr>
   <tr>
