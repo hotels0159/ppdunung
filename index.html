@@ -107,14 +107,14 @@ td,th{border:1px solid #000;padding:6px;}
     display: block !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    padding: 0mm 15mm 10mm 10mm;
-    font-size: 15px;
-    line-height: 1;
-    width: 200mm;
+    padding: 8mm 12mm 8mm 12mm;
+    font-size: 13px;
+    line-height: 1.15;
+    width: 210mm;
     box-sizing: border-box;
   }
-  table { font-size: 14px; table-layout: fixed; }
-  .box { padding: 1px 5px; }
+  table { font-size: 12px; table-layout: fixed; }
+  .box { padding: 1px 4px; font-size: 12px; }
 }
 </style>
 </head>
@@ -184,10 +184,10 @@ td,th{border:1px solid #000;padding:6px;}
 <input id="totalgst" readonly>
 
 <label>Less TDS @0.10%</label>
-<input id="tds" readonly>
+<input id="tds">
 
 <label>Final Total Payable</label>
-<input id="finaltotal" readonly style="font-weight:bold;font-size:24px;">
+<input id="finaltotal" style="font-weight:bold;font-size:24px;">
 
 <label>Truck No</label>
 <input id="truck">
@@ -222,13 +222,11 @@ td,th{border:1px solid #000;padding:6px;}
 <button onclick="window.print()" style="background:#2E8B57;color:white;">Print / Save PDF</button>
 <button onclick="newDO()" style="background:#9932CC;color:white;">New DO</button>
 
-<!-- ─── NEW BUTTONS ─────────────────────────────────────── -->
 <button onclick="exportDailyBackup()" style="background:#e67e22;color:white;">Daily Backup (Today)</button>
 <button onclick="showHistory()" style="background:#7f8c8d;color:white;">View & Print Old DOs</button>
 <button onclick="showOldVoucherSelector()" style="background:#e74c3c;color:white;">
   Old Daily Voucher
 </button>
-
 <button onclick="showOldAttachmentSelector()" style="background:#d35400;color:white;">
   Old Attachment Letter
 </button>
@@ -253,7 +251,6 @@ td,th{border:1px solid #000;padding:6px;}
 
 <div id="output"></div>
 
-<!-- ─── HISTORY VIEWER ─────────────────────────────────── -->
 <div id="historyViewer" class="history-container" style="display:none;">
   <h3 style="margin-top:0;">Previous Delivery Orders</h3>
   <div id="historyList"></div>
@@ -264,6 +261,32 @@ td,th{border:1px solid #000;padding:6px;}
 </div>
 
 <script>
+// GOOGLE SHEETS BACKEND SAVE
+const SCRIPT_URL = 'YOUR_WEB_APP_URL_HERE';   // ← PASTE YOUR REAL GOOGLE APPS SCRIPT URL HERE !!!
+
+async function saveToGoogleSheets() {
+  const data = getCurrentDOData();
+  if (!data.doNumber || !data.date || !data.mdName.trim()) {
+    alert("Cannot save: Missing DO Number, Date or MD Name");
+    return false;
+  }
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    console.log("Data sent to Google Sheets");
+    return true;
+  } catch (error) {
+    console.error("Save failed:", error);
+    alert("Failed to save to server! Check internet/URL.\n" + error.message);
+    return false;
+  }
+}
+
 // ────────────────────────────────────────────────
 //                  BASIC SETUP & STORAGE
 // ────────────────────────────────────────────────
@@ -283,7 +306,6 @@ function generateNewDONumber() {
   document.getElementById('dono').value = "DO/2026/" + lastDO;
 }
 
-// Autosuggest
 function saveArray(key,value){
   if(!value) return;
   let arr = JSON.parse(localStorage.getItem(key) || "[]");
@@ -376,45 +398,41 @@ function updateCalculations() {
   document.getElementById('finaltotal').value = finalTotal;
 }
 
-// Initialize with one line + some mill names
 window.addEventListener('load', () => {
-const millNames = [
-"Chh Rajaram S S K Ltd","Dudhganga S S K Ltd","D H GAIKWAD","ADITI SUGARS",
-"CHAMUNDESHWARI ENTERPRISES","AASHIRWAD SUGARS","Shri Bhogavati S S K Ltd",
-"Kumbhi-Kasari S S K Ltd","HALSIDDHANATH SSK LTD","VISHWASRAO NAIK SSK LTD",
-"MAHALAXMI ENTERPRISES","KALPANA TRADERS","NTEX TRANSPORTATION PVT LTD",
-"SHRI SHAHU SSK LTD KAGAL","S M KAGAL TAL SSK LTD",
-"M/s DALMIA BHARAT SUGAR & INDUSTRIES","TIRUPATI TRADING","RONAK TRADERS",
-"RENUKA SUGARS WORK LTD, ICHALKARANJI",
-"SINDHUDURG DIS.CEN.CO-OP BANK LTD.,SINDUDURGNAGRI     A/C PAD.DR.D.Y.PATIL S S S K LTD",
-"JAWAHAR SSK LTD","VISION 2E","VENKATESHWARA POWER LTD",
-"DOUBLE ROUTE MULTITRADE PVT  LTD","SHAH BALMUKUND TULSIDAS AND COMPANY",
-"VASANTRAO DESAI AJARA SHETKARI SAHAKARI SAKHAR  KARKHANA LIMITED",
-"SHARAD SAKHAR KARKHANA SSK","Shri Mahalaxmi Narayani Sugars.",
-"SHREE DATTA SHETAKRI SSSK LTD","MAHALAXMI ENTERPRISES"
-];
+  const millNames = [
+    "Chh Rajaram S S K Ltd","Dudhganga S S K Ltd","D H GAIKWAD","ADITI SUGARS",
+    "CHAMUNDESHWARI ENTERPRISES","AASHIRWAD SUGARS","Shri Bhogavati S S K Ltd",
+    "Kumbhi-Kasari S S K Ltd","HALSIDDHANATH SSK LTD","VISHWASRAO NAIK SSK LTD",
+    "MAHALAXMI ENTERPRISES","KALPANA TRADERS","NTEX TRANSPORTATION PVT LTD",
+    "SHRI SHAHU SSK LTD KAGAL","S M KAGAL TAL SSK LTD",
+    "M/s DALMIA BHARAT SUGAR & INDUSTRIES","TIRUPATI TRADING","RONAK TRADERS",
+    "RENUKA SUGARS WORK LTD, ICHALKARANJI",
+    "SINDHUDURG DIS.CEN.CO-OP BANK LTD.,SINDUDURGNAGRI     A/C PAD.DR.D.Y.PATIL S S S K LTD",
+    "JAWAHAR SSK LTD","VISION 2E","VENKATESHWARA POWER LTD",
+    "DOUBLE ROUTE MULTITRADE PVT  LTD","SHAH BALMUKUND TULSIDAS AND COMPANY",
+    "VASANTRAO DESAI AJARA SHETKARI SAHAKARI SAKHAR  KARKHANA LIMITED",
+    "SHARAD SAKHAR KARKHANA SSK","Shri Mahalaxmi Narayani Sugars.",
+    "SHREE DATTA SHETAKRI SSSK LTD","MAHALAXMI ENTERPRISES"
+  ];
 
-let arr = JSON.parse(localStorage.getItem("mdnameArr") || "[]");
-millNames.forEach(name => {
-  if(!arr.includes(name)) arr.push(name);
+  let arr = JSON.parse(localStorage.getItem("mdnameArr") || "[]");
+  millNames.forEach(name => {
+    if(!arr.includes(name)) arr.push(name);
+  });
+  localStorage.setItem("mdnameArr", JSON.stringify(arr));
+  loadArray("mdnameArr","mdnameList");
+
+  document.getElementById('mdname').addEventListener('change', () => {
+    document.getElementById('mdaddress').value = 'Kolhapur';
+  });
+
+  document.getElementById('reportType').addEventListener('change', function() {
+    document.getElementById('customDates').style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+
+  addSugarLine();
 });
-localStorage.setItem("mdnameArr", JSON.stringify(arr));
-loadArray("mdnameArr","mdnameList");
 
-document.getElementById('mdname').addEventListener('change', () => {
-  document.getElementById('mdaddress').value = 'Kolhapur';
-});
-
-document.getElementById('reportType').addEventListener('change', function() {
-  document.getElementById('customDates').style.display = this.value === 'custom' ? 'block' : 'none';
-});
-
-addSugarLine();
-});
-
-// ────────────────────────────────────────────────
-//                   UTILITIES
-// ────────────────────────────────────────────────
 function today(){
   const d = new Date();
   return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
@@ -432,10 +450,7 @@ function newDO(){
   document.getElementById('historyViewer').style.display = 'none';
 }
 
-// ────────────────────────────────────────────────
-//                  GENERATE DO - IMPROVED TABLE
-// ────────────────────────────────────────────────
-function generateDO(){
+async function generateDO(){
   saveDONumber();
 
   saveArray("mdnameArr", document.getElementById('mdname').value);
@@ -447,6 +462,7 @@ function generateDO(){
   saveArray("shipgstArr", document.getElementById('shipgst').value);
 
   saveDOData();
+  await saveToGoogleSheets();
 
   document.getElementById('header-section').classList.add('generated-hidden');
 
@@ -534,9 +550,6 @@ ${document.getElementById('mdaddress').value || '---'}</p>
 Authorized Signatory</p>`;
 }
 
-// ────────────────────────────────────────────────
-//              GENERATE ATTACHMENT LETTER
-// ────────────────────────────────────────────────
 function generateAttachmentLetter(){
   saveDONumber();
 
@@ -643,7 +656,6 @@ function saveDOData() {
   if (!doData.doNumber || !doData.mdName.trim()) return;
   
   let allDOs = JSON.parse(localStorage.getItem("allDOs") || "[]");
-  // Prevent duplicate by doNumber
   allDOs = allDOs.filter(d => d.doNumber !== doData.doNumber);
   allDOs.push(doData);
   localStorage.setItem("allDOs", JSON.stringify(allDOs));
@@ -690,7 +702,6 @@ function showHistory() {
     return;
   }
 
-  // Group by date
   const groups = {};
   allDOs.forEach(d => {
     if (!groups[d.date]) groups[d.date] = [];
@@ -855,14 +866,20 @@ function exportReport() {
 
   if (filteredDOs.length === 0) return alert('No data for selected period');
 
-  let csv = 'DATE,DO NUMBER,Managing Director Name,Managing Director ADDRESS,Quintal,Grade,Tender Rate (₹),Effective Bags,Rate + 5% GST,Total Value + GST,Effective Total Bags,Total Value With GST,Less TDS @0.10%,Final Total Payable,Truck No.,Bank Name,RTGS No.,Bill To,GST No. (Bill To),Shipped To,GST No. (Shipped To)\n';
+  let csv = 'DATE,DO NUMBER,Managing Director Name,Managing Director ADDRESS,Quintal,Grade,Tender Rate (₹),Bag Rate (₹),Effective Bags,Bag Purchase Amount (₹),Rate + 5% GST,Total Value + GST,Effective Total Bags,Total Value With GST,Less TDS @0.10%,Final Total Payable,Truck No.,Bank Name,RTGS No.,Bill To,GST No. (Bill To),Shipped To,GST No. (Shipped To)\n';
 
   filteredDOs.forEach(doItem => {
+    const effectiveTotalBags = Number(doItem.effectiveTotalBags || 0);
+
     if (doItem.sugarLines.length === 0) {
-      csv += `"${doItem.date || ''}","${doItem.doNumber || ''}","${doItem.mdName || ''}","${doItem.mdAddress || ''}",,,,,,"${doItem.effectiveTotalBags || ''}","${doItem.totalValueGst || ''}","${doItem.lessTds || ''}","${doItem.finalTotal || ''}","${doItem.truckNo || ''}","${doItem.bankName || ''}","${doItem.rtgsNo || ''}","${doItem.billTo || ''}","${doItem.billGst || ''}","${doItem.shipTo || ''}","${doItem.shipGst || ''}"\n`;
+      csv += `"${doItem.date || ''}","${doItem.doNumber || ''}","${doItem.mdName || ''}","${doItem.mdAddress || ''}",,,,,,,,,"${effectiveTotalBags}","${doItem.totalValueGst || ''}","${doItem.lessTds || ''}","${doItem.finalTotal || ''}","${doItem.truckNo || ''}","${doItem.bankName || ''}","${doItem.rtgsNo || ''}","${doItem.billTo || ''}","${doItem.billGst || ''}","${doItem.shipTo || ''}","${doItem.shipGst || ''}"\n`;
     } else {
       doItem.sugarLines.forEach(line => {
-        csv += `"${doItem.date || ''}","${doItem.doNumber || ''}","${doItem.mdName || ''}","${doItem.mdAddress || ''}","${line.quintal || ''}","${line.grade || ''}","${line.tenderRate || ''}","${line.effectiveBags || ''}","${line.rateGst || ''}","${line.totalGst || ''}","${doItem.effectiveTotalBags || ''}","${doItem.totalValueGst || ''}","${doItem.lessTds || ''}","${doItem.finalTotal || ''}","${doItem.truckNo || ''}","${doItem.bankName || ''}","${doItem.rtgsNo || ''}","${doItem.billTo || ''}","${doItem.billGst || ''}","${doItem.shipTo || ''}","${doItem.shipGst || ''}"\n`;
+        const tenderRate = Number(line.tenderRate || 0);
+        const bagRate = tenderRate > 0 ? (tenderRate / 2).toFixed(2) : "0.00";
+        const bagPurchaseAmount = (Number(bagRate) * effectiveTotalBags).toFixed(2);
+
+        csv += `"${doItem.date || ''}","${doItem.doNumber || ''}","${doItem.mdName || ''}","${doItem.mdAddress || ''}","${line.quintal || ''}","${line.grade || ''}","${line.tenderRate || ''}","${bagRate}","${line.effectiveBags || ''}","${bagPurchaseAmount}","${line.rateGst || ''}","${line.totalGst || ''}","${effectiveTotalBags}","${doItem.totalValueGst || ''}","${doItem.lessTds || ''}","${doItem.finalTotal || ''}","${doItem.truckNo || ''}","${doItem.bankName || ''}","${doItem.rtgsNo || ''}","${doItem.billTo || ''}","${doItem.billGst || ''}","${doItem.shipTo || ''}","${doItem.shipGst || ''}"\n`;
       });
     }
   });
@@ -875,12 +892,11 @@ function exportReport() {
 }
 
 // ────────────────────────────────────────────────
-//          DAILY VOUCHER - SINGLE CURRENT DO ONLY
+//          DAILY VOUCHER - COMPACT VERSION (ALMOST 1 PAGE)
 // ────────────────────────────────────────────────
 function generateDailyVoucher() {
   const currentDO = getCurrentDOData();
 
-  // Basic validation - check if we have meaningful data
   if (!currentDO.doNumber || !currentDO.mdName.trim() || 
       !currentDO.finalTotal || currentDO.finalTotal === '0') {
     return alert("Please generate a valid DO first!\n(No DO number, MD name or amount found)");
@@ -889,77 +905,124 @@ function generateDailyVoucher() {
   const finalVal = Number(currentDO.finalTotal || 0);
   const tdsVal   = Number(currentDO.lessTds || 0);
 
+  let purchaseRate = currentDO.sugarLines.length > 0 
+    ? (currentDO.sugarLines[0].tenderRate || "0")
+    : "0";
+
+  const commonPurchaseMills = [
+    "Chh Rajaram S S K Ltd","Dudhganga S S K Ltd","D H GAIKWAD","ADITI SUGARS",
+    "CHAMUNDESHWARI ENTERPRISES","AASHIRWAD SUGARS","Shri Bhogavati S S K Ltd",
+    "Kumbhi-Kasari S S K Ltd","HALSIDDHANATH SSK LTD","VISHWASRAO NAIK SSK LTD",
+    "MAHALAXMI ENTERPRISES","KALPANA TRADERS","SHRI SHAHU SSK LTD KAGAL",
+    "S M KAGAL TAL SSK LTD","SHARAD SAKHAR KARKHANA SSK",
+    "RENUKA SUGARS WORK LTD, ICHALKARANJI","Other / Multiple"
+  ];
+
+  let millsRows = '';
+  commonPurchaseMills.forEach(mill => {
+    millsRows += `
+      <tr>
+        <td style="padding:4px 6px; font-size:11px; text-align:center;"><input type="checkbox" style="transform:scale(1.2);"></td>
+        <td style="padding:4px 6px; font-size:11px;">${mill}</td>
+        <td style="padding:4px 6px; font-size:11px; text-align:center;">____</td>
+        <td style="padding:4px 6px; font-size:11px; text-align:center;">____</td>
+        <td style="padding:4px 6px; font-size:11px; text-align:right;">₹ ____</td>
+      </tr>
+    `;
+  });
+
   let voucherHtml = `
-<div class="header-band">
-  <div class="output-letterhead">M/S P. P. DUNUNG AND COMPANY</div>
-  <div class="output-subhead">DAILY VOUCHER </div>
-  <div style="text-align:center; font-size:14px; margin:8px 0;">
-    Date: ${currentDO.date} &nbsp;&nbsp;|&nbsp;&nbsp; DO No: ${currentDO.doNumber}
+<div class="header-band" style="padding:6px 0; margin-bottom:8px;">
+  <div class="output-letterhead" style="font-size:20px; margin-bottom:2px;">M/S P. P. DUNUNG AND COMPANY</div>
+  <div class="output-subhead" style="font-size:13px;">Wholesale Sugar Dealers, Kolhapur</div>
+  <div style="text-align:center; font-size:12px; margin:4px 0;">
+    Date: ${currentDO.date}  |  DO No: ${currentDO.doNumber}
   </div>
 </div>
 
-<div class="output-hr"></div>
+<div class="output-hr" style="margin:8px 0;"></div>
 
-<table style="width:100%; font-size:15px; margin:20px 0; border-collapse: collapse;">
+<table style="width:100%; font-size:13px; margin:10px 0; border-collapse: collapse; line-height:1.2;">
   <tr style="background:#f8f8f8;">
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold; width:35%;">Mill / Managing Director</td>
-    <td style="padding:10px; border:1px solid #ccc;">${currentDO.mdName}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold; width:35%;">Mill / Managing Director</td>
+    <td style="padding:6px; border:1px solid #ccc;">${currentDO.mdName}</td>
   </tr>
   <tr>
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Effective Bags</td>
-    <td style="padding:10px; border:1px solid #ccc;">${currentDO.effectiveTotalBags || '0'}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Effective Bags</td>
+    <td style="padding:6px; border:1px solid #ccc;">${currentDO.effectiveTotalBags || '0'}</td>
   </tr>
   <tr>
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Truck No.</td>
-    <td style="padding:10px; border:1px solid #ccc;">${currentDO.truckNo || '-'}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Purchase Rate</td>
+    <td style="padding:6px; border:1px solid #ccc;">₹ ${Number(purchaseRate).toLocaleString('en-IN')}</td>
   </tr>
   <tr>
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Bank Name</td>
-    <td style="padding:10px; border:1px solid #ccc;">${currentDO.bankName || '-'}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Truck No.</td>
+    <td style="padding:6px; border:1px solid #ccc;">${currentDO.truckNo || '-'}</td>
   </tr>
   <tr>
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">RTGS No.</td>
-    <td style="padding:10px; border:1px solid #ccc;">${currentDO.rtgsNo || '-'}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Bank Name</td>
+    <td style="padding:6px; border:1px solid #ccc;">${currentDO.bankName || '-'}</td>
+  </tr>
+  <tr>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">RTGS No.</td>
+    <td style="padding:6px; border:1px solid #ccc;">${currentDO.rtgsNo || '-'}</td>
   </tr>
   <tr style="background:#fff3cd;">
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Total Value With GST</td>
-    <td style="padding:10px; border:1px solid #ccc;">₹ ${Number(currentDO.totalValueGst || 0).toLocaleString('en-IN')}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Total Value With GST</td>
+    <td style="padding:6px; border:1px solid #ccc;">₹ ${Number(currentDO.totalValueGst || 0).toLocaleString('en-IN')}</td>
   </tr>
   <tr style="background:#fff3cd;">
-    <td style="padding:10px; border:1px solid #ccc; font-weight:bold;">Less TDS @0.10%</td>
-    <td style="padding:10px; border:1px solid #ccc;">₹ ${tdsVal.toLocaleString('en-IN')}</td>
+    <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">Less TDS @0.10%</td>
+    <td style="padding:6px; border:1px solid #ccc;">₹ ${tdsVal.toLocaleString('en-IN')}</td>
   </tr>
-  <tr style="font-weight:bold; background:#d4edda; font-size:17px;">
-    <td style="padding:12px; border:1px solid #ccc; text-align:right;">FINAL PAYABLE AMOUNT :</td>
-    <td style="padding:12px; border:1px solid #ccc;">₹ ${finalVal.toLocaleString('en-IN')}</td>
+  <tr style="font-weight:bold; background:#d4edda; font-size:16px;">
+    <td style="padding:8px; border:1px solid #ccc; text-align:right;">FINAL PAYABLE AMOUNT :</td>
+    <td style="padding:8px; border:1px solid #ccc;">₹ ${finalVal.toLocaleString('en-IN')}</td>
   </tr>
 </table>
 
-<p style="margin-top:50px; text-align:center; font-size:15px;">
+<div style="margin:20px 0 10px 0; font-size:14px; font-weight:bold; text-align:center; border-bottom:1px solid #666; padding-bottom:4px;">
+  PURCHASE DETAILS (To be filled manually)
+</div>
+
+<table style="width:100%; font-size:11px; border-collapse: collapse; margin-bottom:20px;">
+  <thead style="background:#f0f0f0;">
+    <tr>
+      <th style="padding:4px 6px; border:1px solid #ccc; width:50px;">Select</th>
+      <th style="padding:4px 6px; border:1px solid #ccc;">Purchase Mill Name</th>
+      <th style="padding:4px 6px; border:1px solid #ccc; width:80px;">Bags</th>
+      <th style="padding:4px 6px; border:1px solid #ccc; width:80px;">Rate</th>
+      <th style="padding:4px 6px; border:1px solid #ccc; width:100px;">Total Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${millsRows}
+  </tbody>
+</table>
+
+<p style="margin-top:30px; text-align:center; font-size:13px; line-height:1.3;">
   Payment to be made via RTGS as per above details.<br><br>
-  Prepared by: ___________________ &nbsp;&nbsp;&nbsp; 
-  Checked by: ___________________ &nbsp;&nbsp;&nbsp; 
+  Prepared by: ___________________   
+  Checked by: ___________________   
   Authorized Signatory: ___________________
 </p>`;
 
   document.getElementById('output').innerHTML = voucherHtml;
   window.scrollTo(0, document.getElementById('output').offsetTop - 100);
 }
+
 // ────────────────────────────────────────────────
-//     SELECT & PRINT OLD SINGLE DO VOUCHER
+//     SELECT & PRINT OLD SINGLE DO VOUCHER + ATTACHMENT LETTER
 // ────────────────────────────────────────────────
 function showOldVoucherSelector() {
   const allDOs = JSON.parse(localStorage.getItem("allDOs") || "[]");
-  if (allDOs.length === 0) {
-    return alert("No previous DOs found in history.");
-  }
+  if (allDOs.length === 0) return alert("No previous DOs found in history.");
 
   let html = `
     <h3 style="margin:0 0 15px 0;">Select DO for Voucher</h3>
     <div style="max-height:350px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#f9f9f9;">
   `;
 
-  // Sort by date descending (newest first)
   allDOs.sort((a,b) => {
     const dateA = a.date.split('/').reverse().join('');
     const dateB = b.date.split('/').reverse().join('');
@@ -985,7 +1048,6 @@ function showOldVoucherSelector() {
 function generateOldVoucher(doNumber) {
   const allDOs = JSON.parse(localStorage.getItem("allDOs") || "[]");
   const doData = allDOs.find(d => d.doNumber === doNumber);
-  
   if (!doData) return alert("Selected DO not found.");
 
   const finalVal = Number(doData.finalTotal || 0);
@@ -996,7 +1058,7 @@ function generateOldVoucher(doNumber) {
   <div class="output-letterhead">M/S P. P. DUNUNG AND COMPANY</div>
   <div class="output-subhead">Payment Voucher - Single DO (Historical)</div>
   <div style="text-align:center; font-size:14px; margin:8px 0;">
-    Date: ${doData.date} &nbsp;&nbsp;|&nbsp;&nbsp; DO No: ${doData.doNumber}
+    Date: ${doData.date}  |  DO No: ${doData.doNumber}
   </div>
 </div>
 
@@ -1039,8 +1101,8 @@ function generateOldVoucher(doNumber) {
 
 <p style="margin-top:50px; text-align:center; font-size:15px;">
   Payment to be made / was made via RTGS as per above details.<br><br>
-  Prepared by: ___________________ &nbsp;&nbsp;&nbsp; 
-  Checked by: ___________________ &nbsp;&nbsp;&nbsp; 
+  Prepared by: ___________________     
+  Checked by: ___________________     
   Authorized Signatory: ___________________
 </p>`;
 
@@ -1049,14 +1111,9 @@ function generateOldVoucher(doNumber) {
   window.scrollTo(0, document.getElementById('output').offsetTop - 100);
 }
 
-// ────────────────────────────────────────────────
-//     SELECT & PRINT OLD ATTACHMENT LETTER
-// ────────────────────────────────────────────────
 function showOldAttachmentSelector() {
   const allDOs = JSON.parse(localStorage.getItem("allDOs") || "[]");
-  if (allDOs.length === 0) {
-    return alert("No previous DOs found in history.");
-  }
+  if (allDOs.length === 0) return alert("No previous DOs found in history.");
 
   let html = `
     <h3 style="margin:0 0 15px 0;">Select DO for Attachment Letter</h3>
